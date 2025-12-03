@@ -41,7 +41,7 @@ export default function CodeInput({
           onFileUpload={onFileUpload}
           onAnalyzeCode={onAnalyzeCode}
           isAnalyzing={isAnalyzing}
-          hasCode={!!codeContent}   {/* enables the analysis button */}
+          hasCode={!!codeContent}  
         />
       </div>
 
