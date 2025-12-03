@@ -1,3 +1,7 @@
+# Organisation Policy: IAM allowedPolicyMemberDomains
+# This configuration allows members from all domains to be used in IAM policies.
+# Use with caution – this effectively disables domain-based restrictions.
+
 constraint: constraints/iam.allowedPolicyMemberDomains
 listPolicy:
   allValues: ALLOW

@@ -1,41 +1,60 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ============================================================
+# 📦 Dependencies & Package Managers
+# ============================================================
+/node_modules          # Installed npm/yarn/pnpm packages
+/.pnp                  # Yarn Plug'n'Play core file
+.pnp.*                 # Additional PnP metadata
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
+# Yarn modern folder structure
 .yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+!.yarn/patches         # Allow custom Yarn patch files
+!.yarn/plugins         # Allow Yarn plugin files
+!.yarn/releases        # Allow Yarn releases
+!.yarn/versions        # Allow version manifests
 
-# testing
-/coverage
+# ============================================================
+# 🧪 Testing Artifacts
+# ============================================================
+/coverage              # Code coverage reports
 
-# next.js
-/.next/
-/out/
+# ============================================================
+# ⚡ Next.js Build Output
+# ============================================================
+/.next/                # Next.js build output
+/out/                 # Static export output
 
-# production
-/build
+# ============================================================
+# 🏭 Production Builds
+# ============================================================
+/build                 # Production builds from tools like Vite or Webpack
 
-# misc
-.DS_Store
-*.pem
+# ============================================================
+# 🗃️ Miscellaneous System Files
+# ============================================================
+.DS_Store              # macOS Finder metadata
+*.pem                  # SSL certificates / private keys
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# ============================================================
+# 🐞 Debug Logs
+# ============================================================
+npm-debug.log*         # npm debug logs
+yarn-debug.log*        # Yarn debug logs
+yarn-error.log*        # Yarn error logs
+.pnpm-debug.log*       # pnpm debug logs
 
-# env files (can opt-in for committing if needed)
+# ============================================================
+# 🔐 Environment Variables
+# ============================================================
+# These often contain secrets. Avoid committing unless explicitly needed.
 .env*
 
-# vercel
-.vercel
+# ============================================================
+# ▲ Vercel Deployment
+# ============================================================
+.vercel               # Vercel project configuration
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# ============================================================
+# 🧩 TypeScript Compiler Output
+# ============================================================
+*.tsbuildinfo         # TS incremental build info
+next-env.d.ts         # Next.js TS environmental types

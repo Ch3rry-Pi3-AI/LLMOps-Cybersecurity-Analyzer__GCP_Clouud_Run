@@ -1,23 +1,50 @@
-# Cyber-Security Agent
+# 🛡️ LLMOps Cybersecurity Analyzer — Repository Setup
 
-## A Code Analyzer via Semgrep MCP server for Azure and GCP
+This branch covers the initial setup—getting the project onto your machine and opening it in your editor so you can explore the structure.
 
-![Course Image](assets/cyber.png)
+## Step 1: Clone the Repository
 
-_If you're looking at this in Cursor, please right click on the filename in the Explorer on the left, and select "Open preview", to view it in formatted glory._
-
-### Welcome to the Week 3 Days 1 and 2 project..
-
-Please clone this repo:
+Begin by cloning the project from GitHub:
 
 ```bash
-git clone https://github.com/ed-donner/cyber.git
+git clone https://github.com/Ch3rry-Pi3-AI/LLMOps-Cybersecurity-Analyzer.git
+cd LLMOps-Cybersecurity-Analyzer
 ```
 
-Then open this as a project in Cursor; then head into the week3 directory and start with guide "day1.part0" - right click and select "Open Preview".
+This downloads the project and moves you into the root directory.
 
-#### Keep in mind
+## Step 2: Open the Project in VS Code (or Cursor)
 
-- Please submit your community_contributions, including links to your repos, in the production repo community_contributions folder
-- Regularly do a git pull to get the latest code
-- Reach out in Udemy or email (ed@edwarddonner.com) if I can help!
+1. Launch VS Code or Cursor
+2. Select **File → New Window**
+3. Select **File → Open Folder**
+4. Find and select the `LLMOps-Cybersecurity-Analyzer` folder
+5. Click **Open**
+
+Your editor will load the full project structure.
+
+## Step 3: Explore the Project Structure
+
+You should now see a layout similar to:
+
+```
+LLMOps-Cybersecurity-Analyzer/
+  backend/
+  frontend/
+  terraform/
+  assets/
+  airline.py
+  Dockerfile
+  .dockerignore
+  .gitignore
+  README.md
+```
+
+Key components:
+
+* **frontend/** — Next.js React interface
+* **backend/** — FastAPI service powering the security analysis
+* **terraform/** — IaC for Azure and GCP deployment
+* **airline.py** — additional experimental agent example
+
+If you'd like, I can prepare the README for the next branch as well.
