@@ -29,15 +29,37 @@ You should now see a layout similar to:
 
 ```
 LLMOps-Cybersecurity-Analyzer/
-  backend/
-  frontend/
-  terraform/
-  assets/
-  airline.py
-  Dockerfile
-  .dockerignore
-  .gitignore
-  README.md
+  ├─ assets/
+  │   └─ README.md
+  ├─ backend/
+  │   ├─ context.py
+  │   ├─ mcp_servers.py
+  │   ├─ server.py
+  │   ├─ pyproject.toml
+  │   └─ README.md
+  ├─ frontend/
+  │   ├─ public/
+  │   ├─ src/
+  │   └─ README.md
+  ├─ terraform/
+  │   ├─ azure/
+  │   │   ├─ main.tf
+  │   │   └─ variables.tf
+  │   └─ gcp/
+  │       ├─ main.tf
+  │       ├─ variables.tf
+  │       └─ allow-all-policy.yaml
+  ├─ airline.py
+  ├─ Dockerfile
+  ├─ .dockerignore
+  ├─ .gitignore
+  ├─ .python-version
+  ├─ uv.lock
+  ├─ package.json
+  ├─ package-lock.json
+  ├─ next.config.ts
+  ├─ tsconfig.json
+  └─ README.md
 ```
 
 Key components:
@@ -46,5 +68,3 @@ Key components:
 * **backend/** — FastAPI service powering the security analysis
 * **terraform/** — IaC for Azure and GCP deployment
 * **airline.py** — additional experimental agent example
-
-If you'd like, I can prepare the README for the next branch as well.
