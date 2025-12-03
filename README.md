@@ -1,165 +1,160 @@
-# 🧪 LLMOps Cybersecurity Analyzer — Local Testing (Without & With Docker)
+# 🧩 LLMOps Cybersecurity Analyzer — Microsoft Azure Setup
 
-This branch README walks you through testing the application locally in two ways:
+This branch README walks you through preparing your Azure account so you can deploy the Cybersecurity Analyzer in later stages. All essential steps are included, and the structure matches your preferred style.
 
-1. Running the **backend and frontend directly** on your machine
-2. Running the **containerized version** that mirrors cloud deployment
+## Step 1: Create Your Azure Account
 
-## Step 1: Test Locally Without Docker
+### Azure Free Account
 
-Let’s first run the system directly on your machine.
+1. Visit: **[https://azure.microsoft.com/en-us/free/](https://azure.microsoft.com/en-us/free/)**
+2. Click **“Start free”**
+3. Sign in with your Microsoft account (or create one)
+4. Provide:
 
-### Prerequisites Check
+   * A credit card (identity verification only — not charged)
+   * A phone number
+5. You’ll receive:
 
-Verify the required tools:
+   * $200 credit for 30 days
+   * 12 months of free popular services
+   * Always-free tier services
+
+**Note:** If you have a **.edu** email, you may qualify for *Azure for Students* with $100 free credit and **no credit card needed**:
+[https://azure.microsoft.com/en-us/free/students/](https://azure.microsoft.com/en-us/free/students/)
+
+Once your account is created, you’ll be redirected to the Azure Portal:
+[https://portal.azure.com](https://portal.azure.com)
+
+## Step 2: Understand Azure’s Structure
+
+Before creating anything, it's useful to understand how Azure organizes resources:
+
+```
+Azure Account (your email)
+  └── Subscription (billing boundary)
+      └── Resource Group (project folder)
+          └── Resources (Container Apps, Registries, Logs, Networks)
+```
+
+Think of it like this:
+
+* **Subscription** → Your payment boundary
+* **Resource Group** → Logical container for related resources
+* **Resources** → The actual services you deploy
+
+## Step 3: Set Up Cost Management
+
+Let’s create a budget so you never overspend accidentally:
+
+1. Open the Azure Portal: [https://portal.azure.com](https://portal.azure.com)
+2. Use the search bar → type **Cost Management + Billing**
+3. Click **Cost Management**
+4. Select **Budgets**
+5. Click **+ Add**
+6. Configure:
+
+   * Name: `Monthly-Training-Budget`
+   * Reset period: Monthly
+   * Budget amount: `10`
+   * Click **Next**
+7. Add email alerts for:
+
+   * 50% usage
+   * 80% usage
+   * 100% usage
+8. Enter your email
+9. Click **Create**
+
+Now you’ll receive warning emails as you approach your budget.
+
+## Step 4: Create Your First Resource Group
+
+All Azure resources for this project must live inside a resource group.
+
+1. In the Azure Portal, click the **☰ menu** (top-left)
+2. Choose **Resource groups**
+3. Click **+ Create**
+4. Fill these fields:
+
+   * **Subscription** → Your subscription
+   * **Resource group** → `cyber-analyzer-rg`
+   * **Region** → Choose the closest region to reduce latency
+
+Examples:
+
+* **US** → East US, West US 2
+* **Europe** → West Europe, North Europe
+* **Asia** → Southeast Asia, Japan East
+
+**Tip:** Keep all resources in the same region for best performance and lowest cost.
+
+5. Click **Review + create**
+6. Click **Create**
+
+Your first resource group is now ready.
+
+## Step 5: Install Azure CLI
+
+Azure CLI allows you to deploy containers, create services, and automate infrastructure.
+
+### Windows
+
+1. Download installer: [https://aka.ms/installazurecliwindows](https://aka.ms/installazurecliwindows)
+2. Run the MSI
+3. Restart your terminal
+
+### macOS
+
+**Option 1 — Homebrew**
 
 ```bash
-# Check Node.js (should be version 20+)
-node --version
-
-# Check uv (Python package manager)
-uv --version
+brew update && brew install azure-cli
 ```
 
-If `uv` is missing:
+**Option 2 — Direct installer**
+
+1. Download: [https://aka.ms/installazureclimacos](https://aka.ms/installazureclimacos)
+2. Install the `.pkg`
+3. Follow the wizard
+
+### Verify Installation
+
+Run:
 
 ```bash
-# Mac/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell as Admin)
-irm https://astral.sh/uv/install.ps1 | iex
+az --version
 ```
 
-### Start the Backend Server
+You should see version details.
 
-Open a new terminal in Cursor and run:
+### Login to Azure
 
 ```bash
-cd backend
-uv run server.py
+az login
 ```
 
-Expected output:
+A browser will open. Log in with your Azure account.
 
-```
-INFO:     Started server process [12345]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8000
-```
+## Step 6: Verify Your Setup
 
-The backend is now live at:
+### Using Azure Portal
 
-```
-http://localhost:8000
-```
+1. Visit [https://portal.azure.com](https://portal.azure.com)
+2. Search for `cyber-analyzer-rg`
+3. Click the group
+4. You should see:
 
-### Start the Frontend Development Server
+   * Correct region
+   * Empty resource list (expected at this stage)
 
-Open **another terminal** and run:
+### Using Azure CLI
 
 ```bash
-cd frontend
-npm install    # Only required the first time
-npm run dev
+# Show your Azure subscriptions
+az account list --output table
+
+# Show your resource groups
+az group list --output table
 ```
 
-You should see Next.js start up:
-
-```
-  ▲ Next.js 15.x.x
-  - Local:        http://localhost:3000
-  - Environments: .env
-
-✓ Ready in 2.1s
-```
-
-### Test the Application
-
-1. Open your browser at:
-
-```
-http://localhost:3000
-```
-
-2. You should see the Cybersecurity Analyzer UI:
-
-3) Click **“Choose File”** and upload the `airline.py` file in the project root
-4) Click **“Analyze Code”**
-5) You should see security vulnerabilities detected:
-
-### Stopping Local Servers
-
-* Stop backend: press `Ctrl + C` in its terminal
-* Stop frontend: press `Ctrl + C` in its terminal
-
-Now you're ready to test the containerized version.
-
-## Step 2: Test Locally With Docker
-
-### Prerequisites Check
-
-Ensure Docker is properly installed:
-
-```bash
-docker --version
-docker ps
-```
-
-If these fail, install Docker Desktop:
-[https://docker.com/get-started](https://docker.com/get-started)
-
-### Build the Docker Image
-
-From the root of the project:
-
-```bash
-docker build -t cyber-analyzer .
-```
-
-The first build takes a few minutes. You’ll see:
-
-```
-Successfully tagged cyber-analyzer:latest
-```
-
-### Run the Container
-
-Start the fully packaged system:
-
-```bash
-docker run --rm --name cyber-analyzer -p 8000:8000 --env-file .env cyber-analyzer
-```
-
-Meaning of flags:
-
-* `--rm` → Delete container on exit
-* `--name` → Easier reference
-* `-p 8000:8000` → Expose backend
-* `--env-file .env` → Load API keys
-* `cyber-analyzer` → Image name
-
-Expected startup logs:
-
-```
-INFO:     Started server process [1]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000
-```
-
-### Test the Container
-
-1. Open:
-
-```
-http://localhost:8000
-```
-
-2. Upload the same `airline.py` file
-3. You should see identical results to non-Docker mode
-
-### Stop the Container
-
-Press `Ctrl + C` in the Docker terminal — the container will auto-remove thanks to `--rm`.
+If everything is configured correctly, you’ll see your subscription and your `cyber-analyzer-rg` group.
