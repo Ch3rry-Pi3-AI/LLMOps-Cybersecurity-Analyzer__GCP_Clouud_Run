@@ -1,70 +1,99 @@
-# 🛡️ LLMOps Cybersecurity Analyzer — Repository Setup
+# 🛡️ LLMOps Cybersecurity Analyzer — Semgrep Setup & Environment Configuration
 
-This branch covers the initial setup—getting the project onto your machine and opening it in your editor so you can explore the structure.
+This branch focuses on two tasks:
 
-## Step 1: Clone the Repository
+* Setting up **Semgrep**, the static analysis engine used alongside the LLM
+* Creating your local **`.env`** file containing your API keys
 
-Begin by cloning the project from GitHub:
+It follows the same structure and tone as the previous branch README, with your image references inserted exactly where you provided them.
 
-```bash
-git clone https://github.com/Ch3rry-Pi3-AI/LLMOps-Cybersecurity-Analyzer.git
-cd LLMOps-Cybersecurity-Analyzer
+
+
+## Step 1: Create Your Semgrep Account
+
+Semgrep provides the static code scanning capability used by the analyzer.
+Start by creating your account:
+
+1. Visit **[https://semgrep.dev](https://semgrep.dev)**
+2. Click **“Try Semgrep for free”**
+3. Choose **“Continue with GitHub”**
+4. Authorise Semgrep when prompted
+
+Once you're logged in, you’ll need to create an API token.
+
+
+
+## Step 2: Generate Your Semgrep API Token
+
+1. Click **Settings** (bottom-left corner of the Semgrep dashboard)
+2. Navigate to **Tokens**
+
+3) Click **“Create New Token”**
+4) Configure the token:
+
+   * Name: `cyber-analyzer` (or anything meaningful)
+   * Scopes:
+
+     * ☑️ **Agent (CI)**
+     * ☑️ **Web API**
+5) Click **Create**
+6) **Important:** Copy the token immediately — it won’t be shown again
+
+It will look something like:
+
+```
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
 ```
 
-This downloads the project and moves you into the root directory.
+Keep this token ready — you'll add it to your `.env` file shortly.
 
-## Step 2: Open the Project in VS Code (or Cursor)
 
-1. Launch VS Code or Cursor
-2. Select **File → New Window**
-3. Select **File → Open Folder**
-4. Find and select the `LLMOps-Cybersecurity-Analyzer` folder
-5. Click **Open**
 
-Your editor will load the full project structure.
+## Step 3: Create the `.env` File
 
-## Step 3: Explore the Project Structure
+Your backend requires two environment variables:
 
-You should now see a layout similar to:
+* `OPENAI_API_KEY`
+* `SEMGREP_APP_TOKEN`
+
+To create the file:
+
+1. In VS Code or Cursor, right-click the project root
+2. Select **New File**
+3. Name it exactly:
 
 ```
-LLMOps-Cybersecurity-Analyzer/
-  ├─ assets/
-  │   └─ README.md
-  ├─ backend/
-  │   ├─ context.py
-  │   ├─ mcp_servers.py
-  │   ├─ server.py
-  │   ├─ pyproject.toml
-  │   └─ README.md
-  ├─ frontend/
-  │   ├─ public/
-  │   ├─ src/
-  │   └─ README.md
-  ├─ terraform/
-  │   ├─ azure/
-  │   │   ├─ main.tf
-  │   │   └─ variables.tf
-  │   └─ gcp/
-  │       ├─ main.tf
-  │       ├─ variables.tf
-  │       └─ allow-all-policy.yaml
-  ├─ airline.py
-  ├─ Dockerfile
-  ├─ .dockerignore
-  ├─ .gitignore
-  ├─ .python-version
-  ├─ uv.lock
-  ├─ package.json
-  ├─ package-lock.json
-  ├─ next.config.ts
-  ├─ tsconfig.json
-  └─ README.md
+.env
 ```
 
-Key components:
+4. Add:
 
-* **frontend/** — Next.js React interface
-* **backend/** — FastAPI service powering the security analysis
-* **terraform/** — IaC for Azure and GCP deployment
-* **airline.py** — additional experimental agent example
+```
+OPENAI_API_KEY=your-openai-key-here
+SEMGREP_APP_TOKEN=your-semgrep-token-here
+```
+
+5. Replace the placeholder text with your real keys
+6. Save the file
+
+### Security Note
+
+Your `.env` file is already listed in `.gitignore`, so it **will not** be committed to Git.
+Always keep these keys private.
+
+
+
+## Step 4: Verify Your Keys
+
+Your `.env` file should resemble:
+
+```
+OPENAI_API_KEY=sk-proj-abc123xyz...
+SEMGREP_APP_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGc...
+```
+
+Once this is done, your backend will be able to:
+
+* authenticate with OpenAI
+* authenticate with Semgrep
+* run full static + LLM security analysis
