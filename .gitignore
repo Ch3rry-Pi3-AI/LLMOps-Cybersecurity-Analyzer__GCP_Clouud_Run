@@ -31,7 +31,7 @@ share/python-wheels/
 *.egg
 .installed.cfg
 MANIFEST
-*/week3
+week3
 
 # ============================================================
 # 🛠️ PyInstaller
@@ -61,6 +61,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
 
 # ============================================================
 # 🌍 Translations

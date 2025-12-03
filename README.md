@@ -1,99 +1,165 @@
-# 🛡️ LLMOps Cybersecurity Analyzer — Semgrep Setup & Environment Configuration
+# 🧪 LLMOps Cybersecurity Analyzer — Local Testing (Without & With Docker)
 
-This branch focuses on two tasks:
+This branch README walks you through testing the application locally in two ways:
 
-* Setting up **Semgrep**, the static analysis engine used alongside the LLM
-* Creating your local **`.env`** file containing your API keys
+1. Running the **backend and frontend directly** on your machine
+2. Running the **containerized version** that mirrors cloud deployment
 
-It follows the same structure and tone as the previous branch README, with your image references inserted exactly where you provided them.
+## Step 1: Test Locally Without Docker
 
+Let’s first run the system directly on your machine.
 
+### Prerequisites Check
 
-## Step 1: Create Your Semgrep Account
+Verify the required tools:
 
-Semgrep provides the static code scanning capability used by the analyzer.
-Start by creating your account:
+```bash
+# Check Node.js (should be version 20+)
+node --version
 
-1. Visit **[https://semgrep.dev](https://semgrep.dev)**
-2. Click **“Try Semgrep for free”**
-3. Choose **“Continue with GitHub”**
-4. Authorise Semgrep when prompted
-
-Once you're logged in, you’ll need to create an API token.
-
-
-
-## Step 2: Generate Your Semgrep API Token
-
-1. Click **Settings** (bottom-left corner of the Semgrep dashboard)
-2. Navigate to **Tokens**
-
-3) Click **“Create New Token”**
-4) Configure the token:
-
-   * Name: `cyber-analyzer` (or anything meaningful)
-   * Scopes:
-
-     * ☑️ **Agent (CI)**
-     * ☑️ **Web API**
-5) Click **Create**
-6) **Important:** Copy the token immediately — it won’t be shown again
-
-It will look something like:
-
-```
-eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
+# Check uv (Python package manager)
+uv --version
 ```
 
-Keep this token ready — you'll add it to your `.env` file shortly.
+If `uv` is missing:
 
+```bash
+# Mac/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-
-## Step 3: Create the `.env` File
-
-Your backend requires two environment variables:
-
-* `OPENAI_API_KEY`
-* `SEMGREP_APP_TOKEN`
-
-To create the file:
-
-1. In VS Code or Cursor, right-click the project root
-2. Select **New File**
-3. Name it exactly:
-
-```
-.env
+# Windows (PowerShell as Admin)
+irm https://astral.sh/uv/install.ps1 | iex
 ```
 
-4. Add:
+### Start the Backend Server
 
-```
-OPENAI_API_KEY=your-openai-key-here
-SEMGREP_APP_TOKEN=your-semgrep-token-here
-```
+Open a new terminal in Cursor and run:
 
-5. Replace the placeholder text with your real keys
-6. Save the file
-
-### Security Note
-
-Your `.env` file is already listed in `.gitignore`, so it **will not** be committed to Git.
-Always keep these keys private.
-
-
-
-## Step 4: Verify Your Keys
-
-Your `.env` file should resemble:
-
-```
-OPENAI_API_KEY=sk-proj-abc123xyz...
-SEMGREP_APP_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGc...
+```bash
+cd backend
+uv run server.py
 ```
 
-Once this is done, your backend will be able to:
+Expected output:
 
-* authenticate with OpenAI
-* authenticate with Semgrep
-* run full static + LLM security analysis
+```
+INFO:     Started server process [12345]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000
+```
+
+The backend is now live at:
+
+```
+http://localhost:8000
+```
+
+### Start the Frontend Development Server
+
+Open **another terminal** and run:
+
+```bash
+cd frontend
+npm install    # Only required the first time
+npm run dev
+```
+
+You should see Next.js start up:
+
+```
+  ▲ Next.js 15.x.x
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+✓ Ready in 2.1s
+```
+
+### Test the Application
+
+1. Open your browser at:
+
+```
+http://localhost:3000
+```
+
+2. You should see the Cybersecurity Analyzer UI:
+
+3) Click **“Choose File”** and upload the `airline.py` file in the project root
+4) Click **“Analyze Code”**
+5) You should see security vulnerabilities detected:
+
+### Stopping Local Servers
+
+* Stop backend: press `Ctrl + C` in its terminal
+* Stop frontend: press `Ctrl + C` in its terminal
+
+Now you're ready to test the containerized version.
+
+## Step 2: Test Locally With Docker
+
+### Prerequisites Check
+
+Ensure Docker is properly installed:
+
+```bash
+docker --version
+docker ps
+```
+
+If these fail, install Docker Desktop:
+[https://docker.com/get-started](https://docker.com/get-started)
+
+### Build the Docker Image
+
+From the root of the project:
+
+```bash
+docker build -t cyber-analyzer .
+```
+
+The first build takes a few minutes. You’ll see:
+
+```
+Successfully tagged cyber-analyzer:latest
+```
+
+### Run the Container
+
+Start the fully packaged system:
+
+```bash
+docker run --rm --name cyber-analyzer -p 8000:8000 --env-file .env cyber-analyzer
+```
+
+Meaning of flags:
+
+* `--rm` → Delete container on exit
+* `--name` → Easier reference
+* `-p 8000:8000` → Expose backend
+* `--env-file .env` → Load API keys
+* `cyber-analyzer` → Image name
+
+Expected startup logs:
+
+```
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000
+```
+
+### Test the Container
+
+1. Open:
+
+```
+http://localhost:8000
+```
+
+2. Upload the same `airline.py` file
+3. You should see identical results to non-Docker mode
+
+### Stop the Container
+
+Press `Ctrl + C` in the Docker terminal — the container will auto-remove thanks to `--rm`.
