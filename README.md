@@ -1,242 +1,189 @@
-# ☁️ **LLMOps Cybersecurity Analyzer — GCP Cloud Run Deployment**
+# 🛡️ **LLMOps Cybersecurity Analyzer — Main Project Overview**
 
-This branch covers deploying the Cybersecurity Analyzer to **Google Cloud Run** using **Terraform**.
-The workflow automatically builds your Docker image, pushes it to Google Container Registry, and deploys a fully serverless Cloud Run service.
+The **LLMOps Cybersecurity Analyzer** is a complete end-to-end system that performs **AI-assisted security analysis** on Python code using:
 
-## **Step 1: Prerequisites**
+* **OpenAI Agents + MCP servers**
+* **Semgrep static analysis integration**
+* A **React/Next.js frontend**
+* A **FastAPI backend**
+* Full **Google Cloud Run deployment** using Terraform
+* Automated container builds through Docker
 
-Before beginning, make sure you have:
+The goal of this project is to deliver a production-grade, cloud-deployable LLMOps workflow for performing static + AI security analysis with consistent, repeatable infrastructure.
 
-* Completed the GCP setup stage
-* Terraform installed
-* Docker running locally
-* A `.env` file in the project root containing:
+## 🎥 **Cybersecurity Analyzer Demo**
 
-  * `OPENAI_API_KEY`
-  * `SEMGREP_APP_TOKEN`
-* Your **GCP Project ID** (example: `cyber-analyzer-123456`)
+<div align="center">
+  <img src="assets/app/cyber_analyzer.gif" width="100%" alt="Cybersecurity Analyzer Demo">
+</div>
 
-### Quick Terraform Check
+This is the deployed version of the application, running in Google Cloud Run.
+
+## 🧩 **Grouped Stages**
+
+This GCP version of the project consists of **two core stages**, covering setup and deployment.
+
+|  Stage | Category         | Description                                                                                |
+| :----: | ---------------- | ------------------------------------------------------------------------------------------ |
+| **00** | GCP Setup        | Creating a GCP account, enabling billing, setting budget alerts, installing the gcloud CLI |
+| **01** | Cloud Run Deploy | Terraform-based deployment to Cloud Run and Container Registry                             |
+
+This provides a clean lifecycle:
+**prepare GCP → deploy to Cloud Run**
+
+## 🗂️ **Project Structure**
+
+```
+LLMOps-Cybersecurity-Analyzer/
+├── assets/
+│   ├── app/
+│   │   └── cyber_analyzer.gif
+│   └── gcp/
+│       └── new_project.png
+├── backend/
+│   ├── context.py
+│   ├── mcp_servers.py
+│   ├── pyproject.toml
+│   ├── server.py
+│   ├── uv.lock
+│   ├── .python-version
+│   ├── .venv/
+│   └── __pycache__/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   └── components/
+│   │       ├── AnalysisResults.tsx
+│   │       ├── CodeInput.tsx
+│   │       ├── FileUpload.tsx
+│   │       └── README.md
+│   │   └── types/
+│   ├── .next/
+│   ├── node_modules/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── next.config.ts
+│   ├── eslint.config.mjs
+│   ├── postcss.config.mjs
+│   └── tsconfig.json
+├── terraform/
+│   ├── azure/          # Legacy folder (not used in GCP version)
+│   └── gcp/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── allow-all-policy.yaml
+├── airline.py
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+├── .env
+└── README.md
+```
+
+## 🧠 **Core Components of the System**
+
+### 🔎 FastAPI Backend (Python)
+
+The backend handles:
+
+* AI-driven semantic analysis using OpenAI Agents
+* One-shot Semgrep scanning through the MCP server
+* Merging LLM findings + static analysis
+* Structured, validated vulnerability reporting
+
+### 🖥️ Next.js Frontend (React)
+
+The frontend provides:
+
+* File upload
+* Display of vulnerabilities in table form
+* Code snippets and recommended fixes
+* Summary and explanation generation
+* Clean UI with fast local Dev experience
+
+### 🛠️ MCP + Semgrep
+
+The MCP server integrates Semgrep in a safe, controlled environment:
+
+* Executes a single scan per request
+* Ensures rule safety
+* Passes structured Semgrep output back to the backend
+* Provides deep static analysis to augment LLM reasoning
+
+### ☁️ Google Cloud Infrastructure (Terraform)
+
+Terraform provisions:
+
+* Google Container Registry
+* Cloud Build (for image building)
+* Cloud Run (serverless container hosting)
+* Public access IAM policies
+* Required Cloud APIs
+
+This results in a **fast, scalable, low-maintenance deployment environment** with automatic HTTPS and per-request billing.
+
+## 💻 **Local Development**
+
+### Backend
 
 ```bash
-terraform version
+cd backend
+uv run server.py
 ```
 
-If Terraform is not installed:
-
-* **Mac:** `brew install terraform`
-* **Windows:** Download from [https://terraform.io/downloads](https://terraform.io/downloads)
-* **Linux:** See Terraform docs for apt/yum installation guides
-
-## **Step 2: Get Your Project ID**
-
-You must use the **project ID**, not the project name.
+### Frontend
 
 ```bash
-gcloud projects list
+cd frontend
+npm install
+npm run dev
 ```
 
-Example output:
-
-```
-PROJECT_ID              NAME             PROJECT_NUMBER
-cyber-analyzer-123456   cyber-analyzer   123456789012
-```
-
-Copy your `PROJECT_ID` — you'll need it shortly.
-
-## **Step 3: Set Environment Variables**
-
-Terraform reads keys via environment variables.
-
-### Mac / Linux
+### Local Docker Test
 
 ```bash
-export $(cat .env | xargs)
-
-export TF_VAR_project_id="cyber-analyzer-123456"
-
-echo "Project ID: $TF_VAR_project_id"
-echo "OpenAI key loaded: ${OPENAI_API_KEY:0:8}..."
-echo "Semgrep token loaded: ${SEMGREP_APP_TOKEN:0:8}..."
+docker build -t cyber-analyzer .
+docker run --rm -p 8000:8000 --env-file .env cyber-analyzer
 ```
 
-### Windows PowerShell
+## 🚀 **Cloud Run Deployment (Stage 01)**
 
-```powershell
-Get-Content .env | ForEach-Object {
-    $name, $value = $_.split('=', 2)
-    Set-Item -Path "env:$name" -Value $value
-}
-
-$env:TF_VAR_project_id = "cyber-analyzer-123456"
-
-Write-Host "Project ID: $env:TF_VAR_project_id"
-Write-Host "OpenAI key loaded: $($env:OPENAI_API_KEY.Substring(0,8))..."
-Write-Host "Semgrep token loaded: $($env:SEMGREP_APP_TOKEN.Substring(0,8))..."
-```
-
-## **Step 4: Initialise Terraform**
-
-Navigate to the GCP Terraform directory:
+### Deployment
 
 ```bash
 cd terraform/gcp
-```
 
-Initialise Terraform and create/select the workspace:
-
-```bash
 terraform init
 terraform workspace new gcp
-terraform workspace select gcp
-terraform workspace show
-```
-
-You should now see the `gcp` workspace active.
-
-## **Step 5: Authenticate with Google Cloud**
-
-Authenticate and configure your environment for Cloud Run deployments:
-
-```bash
-gcloud auth login
-gcloud config set project $TF_VAR_project_id
-gcloud auth application-default login
-gcloud auth application-default set-quota-project $TF_VAR_project_id
-gcloud auth configure-docker
-gcloud config list
-```
-
-Ensure the project displayed matches your project ID.
-
-## **Step 6: Deploy to Cloud Run**
-
-### Plan the deployment first
-
-Mac / Linux:
-
-```bash
-terraform plan \
-  -var="openai_api_key=$OPENAI_API_KEY" \
-  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
-```
-
-Windows PowerShell:
-
-```powershell
-terraform plan -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
-```
-
-You should see Terraform preparing:
-
-* Cloud Run API
-* Container Registry API
-* Cloud Build API
-* Docker image build + push
-* Cloud Run service
-* Public access
-
-### Apply and deploy
-
-Mac / Linux:
-
-```bash
 terraform apply \
   -var="openai_api_key=$OPENAI_API_KEY" \
   -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
 ```
 
-Windows PowerShell:
-
-```powershell
-terraform apply -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
-```
-
-Type `yes` when prompted.
-
-Terraform will:
-
-1. Enable APIs
-2. Build your Docker image
-3. Push it to Container Registry
-4. Deploy Cloud Run
-5. Open public access permissions
-
-### Forcing a rebuild after code changes
-
-```bash
-terraform taint docker_image.app
-terraform taint docker_registry_image.app
-```
-
-Then re-run `terraform apply`.
-
-## **Step 7: Get Your Cloud Run URL**
+### Retrieve your service URL
 
 ```bash
 terraform output service_url
 ```
 
-Example:
-
-```
-"https://cyber-analyzer-abcdef123-uc.a.run.app"
-```
-
-Your application is now live.
-
-## **Step 8: Verify Deployment**
-
-### Test your live app
-
-1. Open the URL
-2. The Cybersecurity Analyzer UI should load
-3. Upload a Python file
-4. Confirm vulnerability detection works end-to-end
-
-### Check Cloud Console resources
-
-1. Go to [https://console.cloud.google.com](https://console.cloud.google.com)
-2. Select your project
-3. Navigate to **Cloud Run**
-4. Confirm the `cyber-analyzer` service is deployed
-
-### Logs
+### Destroy when finished
 
 ```bash
-gcloud run services logs read cyber-analyzer --limit=50 --region=$TF_VAR_region
-
-gcloud alpha run services logs tail cyber-analyzer --region=$TF_VAR_region
+terraform destroy \
+  -var="openai_api_key=$OPENAI_API_KEY" \
+  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
 ```
 
-## **Step 9: Clean Up Resources**
+## **Summary**
 
-Always destroy resources to avoid charges from:
+The **LLMOps Cybersecurity Analyzer (GCP Edition)** provides a complete production-ready security analysis pipeline using:
 
-* Cloud Run
-* Container Registry storage
-* Cloud Build
+* OpenAI Agents
+* Semgrep MCP server
+* Dockerized FastAPI backend
+* Next.js frontend
+* Fully automated Terraform deployment to Cloud Run
 
-### Destroy everything
-
-Mac / Linux:
-
-```bash
-terraform destroy -var="openai_api_key=$OPENAI_API_KEY" -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
-```
-
-Windows PowerShell:
-
-```powershell
-terraform destroy -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
-```
-
-Type `yes` when prompted.
-
-This removes:
-
-* Cloud Run service
-* Container Registry image
-* IAM policies
-* Terraform-managed configuration
+This project demonstrates a professional LLMOps workflow:
+**local development → MCP static analysis → GCP infrastructure → Cloud Run deployment**
