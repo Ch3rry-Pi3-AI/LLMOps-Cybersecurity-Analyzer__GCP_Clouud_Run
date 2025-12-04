@@ -1,206 +1,187 @@
-# 🛡️ **LLMOps Cybersecurity Analyzer — Main Project Overview**
+# ☁️ **LLMOps Cybersecurity Analyzer — GCP Setup Guide**
 
-The **LLMOps Cybersecurity Analyzer** is a complete end-to-end system that performs **AI-assisted security analysis** on Python code using:
+This branch covers the setup required to prepare **Google Cloud Platform (GCP)** for deploying the Cybersecurity Analyzer using **Cloud Run** and **Terraform**.
+You will create a project, configure billing protections, install the gcloud CLI, and verify everything is ready for deployment.
 
-* **OpenAI Agents + MCP servers**
-* **Semgrep static analysis integration**
-* A **React/Next.js frontend**
-* A **FastAPI backend**
-* Full **Azure Container Apps deployment** using Terraform
-* Automated container builds using Docker
+## **Step 1: Create Your GCP Account**
 
-The goal of this project is to deliver a production-grade LLMOps workflow for running, testing, and deploying an AI security analyzer with consistent, repeatable infrastructure.
+### GCP Free Trial
 
+1. Navigate to [https://cloud.google.com/free](https://cloud.google.com/free)
+2. Click **"Get started for free"**
+3. Sign in with your Google account (or create a new one)
+4. Provide the required information:
 
+   * Country
+   * Account type: **Individual**
+   * Credit card (identity check only — no auto-charging)
+   * Phone verification
+5. You will receive:
 
-## 🎥 **Cybersecurity Analyzer Demo**
+   * **$300 credit** valid for 90 days
+   * Access to Always Free services
+   * Zero automatic charges after trial ends
 
-<div align="center">
-  <img src="assets/app/cyber_analyzer.gif" width="100%" alt="Cybersecurity Analyzer Demo">
-</div>
+⚠️ **Important:** GCP will *not* charge you automatically. You must manually upgrade when the trial ends.
 
-This is the fully deployed application running on Azure Container Apps.
+Once complete, you will be redirected to the Cloud Console:
+[https://console.cloud.google.com](https://console.cloud.google.com)
 
-
-
-## 🧩 **Grouped Stages**
-
-This project consists of **five development and deployment stages**, grouped to reflect the natural progression from initial setup to full cloud deployment.
-
-|  Stage | Category            | Description                                                                                      |
-| :----: | ------------------- | ------------------------------------------------------------------------------------------------ |
-| **00** | Repository Setup    | Cloning the repository and preparing the project structure                                       |
-| **01** | Semgrep & MCP Setup | Creating a Semgrep account, generating API tokens, integrating the MCP server                    |
-| **02** | Local Testing       | Running the full application locally (backend + frontend + Docker container test)                |
-| **03** | Azure Setup         | Creating the Azure account, setting cost alerts, installing Azure CLI, preparing resource group  |
-| **04** | Azure Deployment    | Terraform-based deployment to Azure Container Apps, including ACR image push and service rollout |
-
-This provides a full lifecycle:
-**clone → configure → test → prepare cloud → deploy cloud**
-
-
-
-## 🗂️ **Project Structure**
+## **Step 2: Understand GCP’s Structure**
 
 ```
-LLMOps-Cybersecurity-Analyzer/
-├── assets/
-├── backend/
-│   ├── context.py
-│   ├── mcp_servers.py
-│   ├── pyproject.toml
-│   ├── server.py
-│   ├── uv.lock
-│   ├── .python-version
-│   ├── .venv/
-│   └── __pycache__/
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── app/
-│   │   └── components/
-│   │       ├── AnalysisResults.tsx
-│   │       ├── CodeInput.tsx
-│   │       ├── FileUpload.tsx
-│   │       └── README.md
-│   │   └── types/
-│   ├── .next/
-│   ├── node_modules/
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── next.config.ts
-│   ├── eslint.config.mjs
-│   ├── postcss.config.mjs
-│   └── tsconfig.json
-├── terraform/
-│   ├── azure/
-│   │   ├── main.tf
-│   │   └── variables.tf
-│   └── gcp/
-│       ├── main.tf
-│       ├── variables.tf
-│       └── allow-all-policy.yaml
-├── airline.py
-├── Dockerfile
-├── .dockerignore
-├── .gitignore
-├── .env
-└── README.md
+Google Account (Your Gmail)
+  └── Organization (optional)
+      └── Billing Account (your payment method)
+          └── Project (e.g., “cyber-analyzer”)
+              └── Resources (Cloud Run, Artifact Registry, etc.)
 ```
 
+* **Billing Account** — funds multiple projects
+* **Project** — container for resources (similar to Azure Resource Groups)
+* **Resources** — Cloud Run, Artifact Registry, Cloud Build, etc.
 
+## **Step 3: Create Your GCP Project**
 
-## 🧠 **Core Components of the System**
+1. Open the Cloud Console: [https://console.cloud.google.com](https://console.cloud.google.com)
+2. Click the project dropdown at the top
+3. Select **NEW PROJECT**
+4. Configure:
 
-### 🔎 FastAPI Backend (Python)
+   * **Project name:** `cyber-analyzer`
+   * **Organization:** default
+   * **Location:** default
+5. GCP will generate a unique **Project ID** (e.g., `cyber-analyzer-41519`).
+   Write this down — you'll need it for CLI and Terraform.
+6. Click **CREATE**
+7. Ensure the new project is selected
 
-The backend performs:
+assets/gcp/new_project.png
 
-* Semantic analysis through OpenAI Agents
-* One-shot Semgrep scanning through MCP server
-* Combining static analysis with LLM reasoning
-* Validation of requests
-* Packaging into structured security reports
+<p align="center">
+  <img src="assets/gcp/new_project.png" width="100%">
+</p>
 
-### 🖥️ Next.js Frontend (React)
+🎉 Your project is ready.
 
-The frontend provides:
+## **Step 4: Set Up Billing**
 
-* File upload input
-* Secure transmission of Python source code
-* Real-time analysis status
-* Formatted vulnerability table
-* Code snippets + recommended fixes
-* Summary generation
+1. Open the **☰ menu**
+2. Select **Billing**
+3. Link your billing account to the project
+4. Verify your **$300 trial credit** is visible
 
-### 🛠️ MCP + Semgrep
+## **Step 5: Configure Cost Management**
 
-MCP server provides:
+1. In the **☰ menu**, open **Billing**
+2. Select **Budgets & alerts**
+3. Click **CREATE BUDGET**
+4. Use:
 
-* Controlled, rule-safe execution of Semgrep scans
-* A strict requirement that Semgrep runs **once per analysis**
-* Automatic merging of Semgrep findings + LLM findings
+   * **Name:** `Monthly Training Budget`
+   * **Project:** `cyber-analyzer`
+5. Set:
 
-### ☁️ Azure Infrastructure (Terraform)
+   * **Budget amount:** `$10`
+   * **Period:** Monthly
+6. Alerts:
 
-Terraform automates:
+   * 50%, 90%, 100% thresholds
+   * Ensure email alerts are enabled
 
-* ACR (Azure Container Registry)
-* Building + pushing the Docker image
-* Azure Container App environment
-* Container App service (1 CPU / 2 GiB required for Semgrep)
-* Log Analytics Workspace
-* Output of public application URL
+Now you’ll receive alerts long before spending becomes an issue.
 
-This produces a **fully automated, consistent cloud deployment**.
+## **Step 6: Install Google Cloud CLI**
 
+### Windows (Installer)
 
+1. Download installer:
+   [https://cloud.google.com/sdk/docs/install#windows](https://cloud.google.com/sdk/docs/install#windows)
+2. Run **GoogleCloudSDKInstaller.exe**
+3. Accept defaults
+4. A new terminal will open automatically
 
-## 💻 **Local Development (Stage 02)**
+### Windows (PowerShell)
 
-### Backend
+```powershell
+(New-Object Net.WebClient).DownloadFile("https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe", "$env:Temp\GoogleCloudSDKInstaller.exe")
+& $env:Temp\GoogleCloudSDKInstaller.exe
+```
+
+### macOS (Homebrew)
 
 ```bash
-cd backend
-uv run server.py
+brew install --cask google-cloud-sdk
 ```
 
-### Frontend
+### macOS/Linux (Direct install)
 
 ```bash
-cd frontend
-npm install
-npm run dev
+curl https://sdk.cloud.google.com | bash
+exec -l $SHELL
 ```
 
-### Local Docker Test
+### Ubuntu/Debian (APT repository)
 
 ```bash
-docker build -t cyber-analyzer .
-docker run --rm -p 8000:8000 --env-file .env cyber-analyzer
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+sudo apt-get update && sudo apt-get install google-cloud-cli
 ```
 
+## **Step 7: Initialize gcloud**
 
-
-## 🚀 **Azure Deployment (Stage 04)**
-
-### Deployment
+Run the initialization command:
 
 ```bash
-cd terraform/azure
-
-terraform init
-terraform workspace new azure
-terraform apply \
-  -var="openai_api_key=$OPENAI_API_KEY" \
-  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+gcloud init
 ```
 
-### Retrieve URL
+Follow the prompts:
+
+* Log in (browser opens automatically)
+* Select your project: **cyber-analyzer**
+* Choose a default region:
+
+  * US: `us-central1` or `us-east1`
+  * Europe: `europe-west1` or `europe-north1`
+  * Asia: `asia-southeast1` or `asia-northeast1`
+
+💡 **Tip:** Keep the region consistent — Cloud Run, Artifact Registry, and Cloud Build must match.
+
+## **Step 8: Verify Your Setup**
+
+### Using Cloud Console
+
+1. Ensure `cyber-analyzer` is selected
+2. Open **Cloud Run** from the **☰ menu**
+3. You should see an empty service list (expected)
+
+### Using gcloud
 
 ```bash
-terraform output app_url
+gcloud config list
+gcloud projects list
+gcloud config get-value project
+gcloud services list --enabled
 ```
 
-### Destroy when done
+You should now see:
+
+* Your project ID
+* Selected region
+* Enabled APIs list
+
+### Enable Required APIs
+
+Cloud Run deployments require:
 
 ```bash
-terraform destroy \
-  -var="openai_api_key=$OPENAI_API_KEY" \
-  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+gcloud services enable run.googleapis.com containerregistry.googleapis.com cloudbuild.googleapis.com
 ```
 
+These enable:
 
-
-## **Summary**
-
-The **LLMOps Cybersecurity Analyzer** is a complete, production-quality example of modern LLMOps engineering:
-
-* Secure AI agent workflows
-* Static analysis integration
-* Cloud-ready container packaging
-* Fully scripted IaC deployment
-* Repeatable, scalable, low-cost architecture
-
-This project demonstrates a full lifecycle:
-**local development → AI security analysis → MCP + Semgrep integration → IaC cloud deployment**
+* **Cloud Run** (deployments)
+* **Container Registry / Artifact Registry** (images)
+* **Cloud Build** (build + CI pipeline)
