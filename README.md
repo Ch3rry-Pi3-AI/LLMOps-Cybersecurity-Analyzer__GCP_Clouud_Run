@@ -1,160 +1,204 @@
-# 🧩 LLMOps Cybersecurity Analyzer — Microsoft Azure Setup
+# ☁️ **LLMOps Cybersecurity Analyzer — Azure Deployment**
 
-This branch README walks you through preparing your Azure account so you can deploy the Cybersecurity Analyzer in later stages. All essential steps are included, and the structure matches your preferred style.
+This branch covers deploying the Cybersecurity Analyzer to **Microsoft Azure Container Apps** using **Terraform**.
+You will build the Docker image, push it to Azure Container Registry, and deploy it as a serverless containerised application.
 
-## Step 1: Create Your Azure Account
+## **Step 1: Prerequisites**
 
-### Azure Free Account
+Before beginning, make sure you have:
 
-1. Visit: **[https://azure.microsoft.com/en-us/free/](https://azure.microsoft.com/en-us/free/)**
-2. Click **“Start free”**
-3. Sign in with your Microsoft account (or create one)
-4. Provide:
+* Completed the earlier setup stages
+* Terraform installed
+* Docker running locally
+* A `.env` file in the project root containing:
 
-   * A credit card (identity verification only — not charged)
-   * A phone number
-5. You’ll receive:
+  * `OPENAI_API_KEY`
+  * `SEMGREP_APP_TOKEN`
 
-   * $200 credit for 30 days
-   * 12 months of free popular services
-   * Always-free tier services
-
-**Note:** If you have a **.edu** email, you may qualify for *Azure for Students* with $100 free credit and **no credit card needed**:
-[https://azure.microsoft.com/en-us/free/students/](https://azure.microsoft.com/en-us/free/students/)
-
-Once your account is created, you’ll be redirected to the Azure Portal:
-[https://portal.azure.com](https://portal.azure.com)
-
-## Step 2: Understand Azure’s Structure
-
-Before creating anything, it's useful to understand how Azure organizes resources:
-
-```
-Azure Account (your email)
-  └── Subscription (billing boundary)
-      └── Resource Group (project folder)
-          └── Resources (Container Apps, Registries, Logs, Networks)
-```
-
-Think of it like this:
-
-* **Subscription** → Your payment boundary
-* **Resource Group** → Logical container for related resources
-* **Resources** → The actual services you deploy
-
-## Step 3: Set Up Cost Management
-
-Let’s create a budget so you never overspend accidentally:
-
-1. Open the Azure Portal: [https://portal.azure.com](https://portal.azure.com)
-2. Use the search bar → type **Cost Management + Billing**
-3. Click **Cost Management**
-4. Select **Budgets**
-5. Click **+ Add**
-6. Configure:
-
-   * Name: `Monthly-Training-Budget`
-   * Reset period: Monthly
-   * Budget amount: `10`
-   * Click **Next**
-7. Add email alerts for:
-
-   * 50% usage
-   * 80% usage
-   * 100% usage
-8. Enter your email
-9. Click **Create**
-
-Now you’ll receive warning emails as you approach your budget.
-
-## Step 4: Create Your First Resource Group
-
-All Azure resources for this project must live inside a resource group.
-
-1. In the Azure Portal, click the **☰ menu** (top-left)
-2. Choose **Resource groups**
-3. Click **+ Create**
-4. Fill these fields:
-
-   * **Subscription** → Your subscription
-   * **Resource group** → `cyber-analyzer-rg`
-   * **Region** → Choose the closest region to reduce latency
-
-Examples:
-
-* **US** → East US, West US 2
-* **Europe** → West Europe, North Europe
-* **Asia** → Southeast Asia, Japan East
-
-**Tip:** Keep all resources in the same region for best performance and lowest cost.
-
-5. Click **Review + create**
-6. Click **Create**
-
-Your first resource group is now ready.
-
-## Step 5: Install Azure CLI
-
-Azure CLI allows you to deploy containers, create services, and automate infrastructure.
-
-### Windows
-
-1. Download installer: [https://aka.ms/installazurecliwindows](https://aka.ms/installazurecliwindows)
-2. Run the MSI
-3. Restart your terminal
-
-### macOS
-
-**Option 1 — Homebrew**
+### Quick Terraform Check
 
 ```bash
-brew update && brew install azure-cli
+terraform version
 ```
 
-**Option 2 — Direct installer**
+If you need to install Terraform:
 
-1. Download: [https://aka.ms/installazureclimacos](https://aka.ms/installazureclimacos)
-2. Install the `.pkg`
-3. Follow the wizard
+* **Mac (Homebrew):**
+  `brew install terraform`
 
-### Verify Installation
+* **Windows:**
+  Download from [https://terraform.io/downloads](https://terraform.io/downloads)
 
-Run:
+## **Step 2: Set Environment Variables**
+
+### Mac / Linux
 
 ```bash
-az --version
+export $(cat .env | xargs)
+
+echo "OpenAI key loaded: ${OPENAI_API_KEY:0:8}..."
+echo "Semgrep token loaded: ${SEMGREP_APP_TOKEN:0:8}..."
 ```
 
-You should see version details.
+### Windows (PowerShell)
 
-### Login to Azure
+```powershell
+Get-Content .env | ForEach-Object {
+    $name, $value = $_.split('=', 2)
+    Set-Item -Path "env:$name" -Value $value
+}
+
+Write-Host "OpenAI key loaded: $($env:OPENAI_API_KEY.Substring(0,8))..."
+Write-Host "Semgrep token loaded: $($env:SEMGREP_APP_TOKEN.Substring(0,8))..."
+```
+
+## **Step 3: Initialise Terraform**
+
+Navigate to the Azure Terraform directory:
+
+```bash
+cd terraform/azure
+```
+
+Init and create workspace:
+
+```bash
+terraform init
+terraform workspace new azure
+terraform workspace select azure
+terraform workspace show
+```
+
+## **Step 4: Login to Azure & Register Providers**
 
 ```bash
 az login
+az account show --output table
 ```
 
-A browser will open. Log in with your Azure account.
-
-## Step 6: Verify Your Setup
-
-### Using Azure Portal
-
-1. Visit [https://portal.azure.com](https://portal.azure.com)
-2. Search for `cyber-analyzer-rg`
-3. Click the group
-4. You should see:
-
-   * Correct region
-   * Empty resource list (expected at this stage)
-
-### Using Azure CLI
+Register required providers:
 
 ```bash
-# Show your Azure subscriptions
-az account list --output table
-
-# Show your resource groups
-az group list --output table
+az provider register --namespace Microsoft.App
+az provider register --namespace Microsoft.OperationalInsights
 ```
 
-If everything is configured correctly, you’ll see your subscription and your `cyber-analyzer-rg` group.
+Check they’re registered:
+
+```bash
+az provider show --namespace Microsoft.App --query "registrationState" -o tsv
+az provider show --namespace Microsoft.OperationalInsights --query "registrationState" -o tsv
+```
+
+## **Step 5: Deploy to Azure**
+
+### Plan:
+
+```bash
+terraform plan \
+  -var="openai_api_key=$OPENAI_API_KEY" \
+  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+```
+
+### Apply:
+
+**Mac/Linux**
+
+```bash
+terraform apply \
+  -var="openai_api_key=$OPENAI_API_KEY" \
+  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+```
+
+**Windows PowerShell**
+
+```powershell
+terraform apply -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
+```
+
+### Force rebuild after code changes
+
+```bash
+terraform taint docker_image.app
+terraform taint docker_registry_image.app
+```
+
+## **Step 6: Retrieve Your Application URL**
+
+```bash
+terraform output app_url
+```
+
+Example:
+
+```
+"https://cyber-analyzer.nicehill-12345678.eastus.azurecontainerapps.io"
+```
+
+## **Step 7: Verify the Deployment**
+
+### Test the application
+
+assets/app/cyber_analyzer.gif
+
+### Check Azure resources
+
+assets/azure/resources.png
+
+### Logs
+
+```bash
+az containerapp logs show --name cyber-analyzer --resource-group cyber-analyzer-rg --follow
+```
+
+### Costs
+
+Check in Azure Portal under **Cost Management → Cost analysis**.
+
+## **Step 8: Clean Up Resources**
+
+### Destroy everything
+
+**Mac/Linux**
+
+```bash
+terraform destroy \
+  -var="openai_api_key=$OPENAI_API_KEY" \
+  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+```
+
+**Windows PowerShell**
+
+```powershell
+terraform destroy -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
+```
+
+### Optional: delete resource group
+
+```bash
+az group delete --name cyber-analyzer-rg --yes
+```
+
+## **Understanding the Azure Architecture**
+
+### Cost Summary
+
+* ACR Basic: ~$5/mo
+* Container Apps: ~$0 when idle
+* Log Analytics: 5GB free
+* Total: < $5/month
+
+### Architecture
+
+```
+Internet → Azure Container App → Your Docker Image
+                 ↓
+          Log Analytics
+                 ↓
+       Azure Container Registry
+```
+
+### Scaling
+
+* Min replicas: 0
+* Max replicas: 1
