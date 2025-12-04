@@ -139,11 +139,16 @@ Example:
 
 ### Test the application
 
-assets/app/cyber_analyzer.gif
+<p align="center">
+  <img src="assets/app/cyber_analyzer.gif" alt="Cybersecurity Analyzer demo" width="100%">
+</p>
 
 ### Check Azure resources
 
-assets/azure/resources.png
+<p align="center">
+  <img src="assets/azure/resources.png" alt="Azure resources for Cybersecurity Analyzer" width="100%">
+</p>
+
 
 ### Logs
 
