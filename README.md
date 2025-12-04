@@ -1,187 +1,242 @@
-# ☁️ **LLMOps Cybersecurity Analyzer — GCP Setup Guide**
+# ☁️ **LLMOps Cybersecurity Analyzer — GCP Cloud Run Deployment**
 
-This branch covers the setup required to prepare **Google Cloud Platform (GCP)** for deploying the Cybersecurity Analyzer using **Cloud Run** and **Terraform**.
-You will create a project, configure billing protections, install the gcloud CLI, and verify everything is ready for deployment.
+This branch covers deploying the Cybersecurity Analyzer to **Google Cloud Run** using **Terraform**.
+The workflow automatically builds your Docker image, pushes it to Google Container Registry, and deploys a fully serverless Cloud Run service.
 
-## **Step 1: Create Your GCP Account**
+## **Step 1: Prerequisites**
 
-### GCP Free Trial
+Before beginning, make sure you have:
 
-1. Navigate to [https://cloud.google.com/free](https://cloud.google.com/free)
-2. Click **"Get started for free"**
-3. Sign in with your Google account (or create a new one)
-4. Provide the required information:
+* Completed the GCP setup stage
+* Terraform installed
+* Docker running locally
+* A `.env` file in the project root containing:
 
-   * Country
-   * Account type: **Individual**
-   * Credit card (identity check only — no auto-charging)
-   * Phone verification
-5. You will receive:
+  * `OPENAI_API_KEY`
+  * `SEMGREP_APP_TOKEN`
+* Your **GCP Project ID** (example: `cyber-analyzer-123456`)
 
-   * **$300 credit** valid for 90 days
-   * Access to Always Free services
-   * Zero automatic charges after trial ends
+### Quick Terraform Check
 
-⚠️ **Important:** GCP will *not* charge you automatically. You must manually upgrade when the trial ends.
-
-Once complete, you will be redirected to the Cloud Console:
-[https://console.cloud.google.com](https://console.cloud.google.com)
-
-## **Step 2: Understand GCP’s Structure**
-
-```
-Google Account (Your Gmail)
-  └── Organization (optional)
-      └── Billing Account (your payment method)
-          └── Project (e.g., “cyber-analyzer”)
-              └── Resources (Cloud Run, Artifact Registry, etc.)
+```bash
+terraform version
 ```
 
-* **Billing Account** — funds multiple projects
-* **Project** — container for resources (similar to Azure Resource Groups)
-* **Resources** — Cloud Run, Artifact Registry, Cloud Build, etc.
+If Terraform is not installed:
 
-## **Step 3: Create Your GCP Project**
+* **Mac:** `brew install terraform`
+* **Windows:** Download from [https://terraform.io/downloads](https://terraform.io/downloads)
+* **Linux:** See Terraform docs for apt/yum installation guides
 
-1. Open the Cloud Console: [https://console.cloud.google.com](https://console.cloud.google.com)
-2. Click the project dropdown at the top
-3. Select **NEW PROJECT**
-4. Configure:
+## **Step 2: Get Your Project ID**
 
-   * **Project name:** `cyber-analyzer`
-   * **Organization:** default
-   * **Location:** default
-5. GCP will generate a unique **Project ID** (e.g., `cyber-analyzer-41519`).
-   Write this down — you'll need it for CLI and Terraform.
-6. Click **CREATE**
-7. Ensure the new project is selected
+You must use the **project ID**, not the project name.
 
-assets/gcp/new_project.png
+```bash
+gcloud projects list
+```
 
-<p align="center">
-  <img src="assets/gcp/new_project.png" width="100%">
-</p>
+Example output:
 
-🎉 Your project is ready.
+```
+PROJECT_ID              NAME             PROJECT_NUMBER
+cyber-analyzer-123456   cyber-analyzer   123456789012
+```
 
-## **Step 4: Set Up Billing**
+Copy your `PROJECT_ID` — you'll need it shortly.
 
-1. Open the **☰ menu**
-2. Select **Billing**
-3. Link your billing account to the project
-4. Verify your **$300 trial credit** is visible
+## **Step 3: Set Environment Variables**
 
-## **Step 5: Configure Cost Management**
+Terraform reads keys via environment variables.
 
-1. In the **☰ menu**, open **Billing**
-2. Select **Budgets & alerts**
-3. Click **CREATE BUDGET**
-4. Use:
+### Mac / Linux
 
-   * **Name:** `Monthly Training Budget`
-   * **Project:** `cyber-analyzer`
-5. Set:
+```bash
+export $(cat .env | xargs)
 
-   * **Budget amount:** `$10`
-   * **Period:** Monthly
-6. Alerts:
+export TF_VAR_project_id="cyber-analyzer-123456"
 
-   * 50%, 90%, 100% thresholds
-   * Ensure email alerts are enabled
+echo "Project ID: $TF_VAR_project_id"
+echo "OpenAI key loaded: ${OPENAI_API_KEY:0:8}..."
+echo "Semgrep token loaded: ${SEMGREP_APP_TOKEN:0:8}..."
+```
 
-Now you’ll receive alerts long before spending becomes an issue.
-
-## **Step 6: Install Google Cloud CLI**
-
-### Windows (Installer)
-
-1. Download installer:
-   [https://cloud.google.com/sdk/docs/install#windows](https://cloud.google.com/sdk/docs/install#windows)
-2. Run **GoogleCloudSDKInstaller.exe**
-3. Accept defaults
-4. A new terminal will open automatically
-
-### Windows (PowerShell)
+### Windows PowerShell
 
 ```powershell
-(New-Object Net.WebClient).DownloadFile("https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe", "$env:Temp\GoogleCloudSDKInstaller.exe")
-& $env:Temp\GoogleCloudSDKInstaller.exe
+Get-Content .env | ForEach-Object {
+    $name, $value = $_.split('=', 2)
+    Set-Item -Path "env:$name" -Value $value
+}
+
+$env:TF_VAR_project_id = "cyber-analyzer-123456"
+
+Write-Host "Project ID: $env:TF_VAR_project_id"
+Write-Host "OpenAI key loaded: $($env:OPENAI_API_KEY.Substring(0,8))..."
+Write-Host "Semgrep token loaded: $($env:SEMGREP_APP_TOKEN.Substring(0,8))..."
 ```
 
-### macOS (Homebrew)
+## **Step 4: Initialise Terraform**
+
+Navigate to the GCP Terraform directory:
 
 ```bash
-brew install --cask google-cloud-sdk
+cd terraform/gcp
 ```
 
-### macOS/Linux (Direct install)
+Initialise Terraform and create/select the workspace:
 
 ```bash
-curl https://sdk.cloud.google.com | bash
-exec -l $SHELL
+terraform init
+terraform workspace new gcp
+terraform workspace select gcp
+terraform workspace show
 ```
 
-### Ubuntu/Debian (APT repository)
+You should now see the `gcp` workspace active.
+
+## **Step 5: Authenticate with Google Cloud**
+
+Authenticate and configure your environment for Cloud Run deployments:
 
 ```bash
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-sudo apt-get update && sudo apt-get install google-cloud-cli
-```
-
-## **Step 7: Initialize gcloud**
-
-Run the initialization command:
-
-```bash
-gcloud init
-```
-
-Follow the prompts:
-
-* Log in (browser opens automatically)
-* Select your project: **cyber-analyzer**
-* Choose a default region:
-
-  * US: `us-central1` or `us-east1`
-  * Europe: `europe-west1` or `europe-north1`
-  * Asia: `asia-southeast1` or `asia-northeast1`
-
-💡 **Tip:** Keep the region consistent — Cloud Run, Artifact Registry, and Cloud Build must match.
-
-## **Step 8: Verify Your Setup**
-
-### Using Cloud Console
-
-1. Ensure `cyber-analyzer` is selected
-2. Open **Cloud Run** from the **☰ menu**
-3. You should see an empty service list (expected)
-
-### Using gcloud
-
-```bash
+gcloud auth login
+gcloud config set project $TF_VAR_project_id
+gcloud auth application-default login
+gcloud auth application-default set-quota-project $TF_VAR_project_id
+gcloud auth configure-docker
 gcloud config list
-gcloud projects list
-gcloud config get-value project
-gcloud services list --enabled
 ```
 
-You should now see:
+Ensure the project displayed matches your project ID.
 
-* Your project ID
-* Selected region
-* Enabled APIs list
+## **Step 6: Deploy to Cloud Run**
 
-### Enable Required APIs
+### Plan the deployment first
 
-Cloud Run deployments require:
+Mac / Linux:
 
 ```bash
-gcloud services enable run.googleapis.com containerregistry.googleapis.com cloudbuild.googleapis.com
+terraform plan \
+  -var="openai_api_key=$OPENAI_API_KEY" \
+  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
 ```
 
-These enable:
+Windows PowerShell:
 
-* **Cloud Run** (deployments)
-* **Container Registry / Artifact Registry** (images)
-* **Cloud Build** (build + CI pipeline)
+```powershell
+terraform plan -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
+```
+
+You should see Terraform preparing:
+
+* Cloud Run API
+* Container Registry API
+* Cloud Build API
+* Docker image build + push
+* Cloud Run service
+* Public access
+
+### Apply and deploy
+
+Mac / Linux:
+
+```bash
+terraform apply \
+  -var="openai_api_key=$OPENAI_API_KEY" \
+  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+```
+
+Windows PowerShell:
+
+```powershell
+terraform apply -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
+```
+
+Type `yes` when prompted.
+
+Terraform will:
+
+1. Enable APIs
+2. Build your Docker image
+3. Push it to Container Registry
+4. Deploy Cloud Run
+5. Open public access permissions
+
+### Forcing a rebuild after code changes
+
+```bash
+terraform taint docker_image.app
+terraform taint docker_registry_image.app
+```
+
+Then re-run `terraform apply`.
+
+## **Step 7: Get Your Cloud Run URL**
+
+```bash
+terraform output service_url
+```
+
+Example:
+
+```
+"https://cyber-analyzer-abcdef123-uc.a.run.app"
+```
+
+Your application is now live.
+
+## **Step 8: Verify Deployment**
+
+### Test your live app
+
+1. Open the URL
+2. The Cybersecurity Analyzer UI should load
+3. Upload a Python file
+4. Confirm vulnerability detection works end-to-end
+
+### Check Cloud Console resources
+
+1. Go to [https://console.cloud.google.com](https://console.cloud.google.com)
+2. Select your project
+3. Navigate to **Cloud Run**
+4. Confirm the `cyber-analyzer` service is deployed
+
+### Logs
+
+```bash
+gcloud run services logs read cyber-analyzer --limit=50 --region=$TF_VAR_region
+
+gcloud alpha run services logs tail cyber-analyzer --region=$TF_VAR_region
+```
+
+## **Step 9: Clean Up Resources**
+
+Always destroy resources to avoid charges from:
+
+* Cloud Run
+* Container Registry storage
+* Cloud Build
+
+### Destroy everything
+
+Mac / Linux:
+
+```bash
+terraform destroy -var="openai_api_key=$OPENAI_API_KEY" -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
+```
+
+Windows PowerShell:
+
+```powershell
+terraform destroy -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
+```
+
+Type `yes` when prompted.
+
+This removes:
+
+* Cloud Run service
+* Container Registry image
+* IAM policies
+* Terraform-managed configuration
