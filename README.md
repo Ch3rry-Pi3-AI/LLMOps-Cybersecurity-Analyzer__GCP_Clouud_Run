@@ -1,170 +1,192 @@
-# ☁️ **LLMOps Cybersecurity Analyzer — Azure Deployment**
+# 🛡️ **LLMOps Cybersecurity Analyzer — Main Project Overview**
 
-This branch covers deploying the Cybersecurity Analyzer to **Microsoft Azure Container Apps** using **Terraform**.
-You will build the Docker image, push it to Azure Container Registry, and deploy it as a serverless containerised application.
+The **LLMOps Cybersecurity Analyzer** is a complete end-to-end system that performs **AI-assisted security analysis** on Python code using:
 
-## **Step 1: Prerequisites**
+* **OpenAI Agents + MCP servers**
+* **Semgrep static analysis integration**
+* A **React/Next.js frontend**
+* A **FastAPI backend**
+* Full **Azure Container Apps deployment** using Terraform
+* Automated container builds using Docker
 
-Before beginning, make sure you have:
+The goal of this project is to deliver a production-grade LLMOps workflow for running, testing, and deploying an AI security analyzer with consistent, repeatable infrastructure.
 
-* Completed the earlier setup stages
-* Terraform installed
-* Docker running locally
-* A `.env` file in the project root containing:
 
-  * `OPENAI_API_KEY`
-  * `SEMGREP_APP_TOKEN`
 
-### Quick Terraform Check
+## 🎥 **Cybersecurity Analyzer Demo**
+
+<div align="center">
+  <img src="assets/app/cyber_analyzer.gif" width="100%" alt="Cybersecurity Analyzer Demo">
+</div>
+
+This is the fully deployed application running on Azure Container Apps.
+
+
+
+## 🧩 **Grouped Stages**
+
+This project consists of **five development and deployment stages**, grouped to reflect the natural progression from initial setup to full cloud deployment.
+
+|  Stage | Category            | Description                                                                                      |
+| :----: | ------------------- | ------------------------------------------------------------------------------------------------ |
+| **00** | Repository Setup    | Cloning the repository and preparing the project structure                                       |
+| **01** | Semgrep & MCP Setup | Creating a Semgrep account, generating API tokens, integrating the MCP server                    |
+| **02** | Local Testing       | Running the full application locally (backend + frontend + Docker container test)                |
+| **03** | Azure Setup         | Creating the Azure account, setting cost alerts, installing Azure CLI, preparing resource group  |
+| **04** | Azure Deployment    | Terraform-based deployment to Azure Container Apps, including ACR image push and service rollout |
+
+This provides a full lifecycle:
+**clone → configure → test → prepare cloud → deploy cloud**
+
+
+
+## 🗂️ **Project Structure**
+
+```
+LLMOps-Cybersecurity-Analyzer/
+├── assets/
+│   └── app/
+│       └── cyber_analyzer.gif
+│   └── azure/
+│       └── resources.png
+├── backend/
+│   ├── context.py
+│   ├── mcp_servers.py
+│   ├── pyproject.toml
+│   ├── server.py
+│   ├── uv.lock
+│   ├── .python-version
+│   ├── .venv/
+│   └── __pycache__/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   └── components/
+│   │       ├── AnalysisResults.tsx
+│   │       ├── CodeInput.tsx
+│   │       ├── FileUpload.tsx
+│   │       └── README.md
+│   │   └── types/
+│   ├── .next/
+│   ├── node_modules/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── next.config.ts
+│   ├── eslint.config.mjs
+│   ├── postcss.config.mjs
+│   └── tsconfig.json
+├── terraform/
+│   ├── azure/
+│   │   ├── main.tf
+│   │   └── variables.tf
+│   └── gcp/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── allow-all-policy.yaml
+├── airline.py
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+├── .env
+└── README.md
+```
+
+
+
+## 🧠 **Core Components of the System**
+
+### 🔎 FastAPI Backend (Python)
+
+The backend performs:
+
+* Semantic analysis through OpenAI Agents
+* One-shot Semgrep scanning through MCP server
+* Combining static analysis with LLM reasoning
+* Validation of requests
+* Packaging into structured security reports
+
+### 🖥️ Next.js Frontend (React)
+
+The frontend provides:
+
+* File upload input
+* Secure transmission of Python source code
+* Real-time analysis status
+* Formatted vulnerability table
+* Code snippets + recommended fixes
+* Summary generation
+
+### 🛠️ MCP + Semgrep
+
+MCP server provides:
+
+* Controlled, rule-safe execution of Semgrep scans
+* A strict requirement that Semgrep runs **once per analysis**
+* Automatic merging of Semgrep findings + LLM findings
+
+### ☁️ Azure Infrastructure (Terraform)
+
+Terraform automates:
+
+* ACR (Azure Container Registry)
+* Building + pushing the Docker image
+* Azure Container App environment
+* Container App service (1 CPU / 2 GiB required for Semgrep)
+* Log Analytics Workspace
+* Output of public application URL
+
+This produces a **fully automated, consistent cloud deployment**.
+
+
+
+## 💻 **Local Development (Stage 02)**
+
+### Backend
 
 ```bash
-terraform version
+cd backend
+uv run server.py
 ```
 
-If you need to install Terraform:
-
-* **Mac (Homebrew):**
-  `brew install terraform`
-
-* **Windows:**
-  Download from [https://terraform.io/downloads](https://terraform.io/downloads)
-
-## **Step 2: Set Environment Variables**
-
-### Mac / Linux
+### Frontend
 
 ```bash
-export $(cat .env | xargs)
-
-echo "OpenAI key loaded: ${OPENAI_API_KEY:0:8}..."
-echo "Semgrep token loaded: ${SEMGREP_APP_TOKEN:0:8}..."
+cd frontend
+npm install
+npm run dev
 ```
 
-### Windows (PowerShell)
+### Local Docker Test
 
-```powershell
-Get-Content .env | ForEach-Object {
-    $name, $value = $_.split('=', 2)
-    Set-Item -Path "env:$name" -Value $value
-}
-
-Write-Host "OpenAI key loaded: $($env:OPENAI_API_KEY.Substring(0,8))..."
-Write-Host "Semgrep token loaded: $($env:SEMGREP_APP_TOKEN.Substring(0,8))..."
+```bash
+docker build -t cyber-analyzer .
+docker run --rm -p 8000:8000 --env-file .env cyber-analyzer
 ```
 
-## **Step 3: Initialise Terraform**
 
-Navigate to the Azure Terraform directory:
+
+## 🚀 **Azure Deployment (Stage 04)**
+
+### Deployment
 
 ```bash
 cd terraform/azure
-```
 
-Init and create workspace:
-
-```bash
 terraform init
 terraform workspace new azure
-terraform workspace select azure
-terraform workspace show
-```
-
-## **Step 4: Login to Azure & Register Providers**
-
-```bash
-az login
-az account show --output table
-```
-
-Register required providers:
-
-```bash
-az provider register --namespace Microsoft.App
-az provider register --namespace Microsoft.OperationalInsights
-```
-
-Check they’re registered:
-
-```bash
-az provider show --namespace Microsoft.App --query "registrationState" -o tsv
-az provider show --namespace Microsoft.OperationalInsights --query "registrationState" -o tsv
-```
-
-## **Step 5: Deploy to Azure**
-
-### Plan:
-
-```bash
-terraform plan \
-  -var="openai_api_key=$OPENAI_API_KEY" \
-  -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
-```
-
-### Apply:
-
-**Mac/Linux**
-
-```bash
 terraform apply \
   -var="openai_api_key=$OPENAI_API_KEY" \
   -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
 ```
 
-**Windows PowerShell**
-
-```powershell
-terraform apply -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
-```
-
-### Force rebuild after code changes
-
-```bash
-terraform taint docker_image.app
-terraform taint docker_registry_image.app
-```
-
-## **Step 6: Retrieve Your Application URL**
+### Retrieve URL
 
 ```bash
 terraform output app_url
 ```
 
-Example:
-
-```
-"https://cyber-analyzer.nicehill-12345678.eastus.azurecontainerapps.io"
-```
-
-## **Step 7: Verify the Deployment**
-
-### Test the application
-
-<p align="center">
-  <img src="assets/app/cyber_analyzer.gif" alt="Cybersecurity Analyzer demo" width="100%">
-</p>
-
-### Check Azure resources
-
-<p align="center">
-  <img src="assets/azure/resources.png" alt="Azure resources for Cybersecurity Analyzer" width="100%">
-</p>
-
-
-### Logs
-
-```bash
-az containerapp logs show --name cyber-analyzer --resource-group cyber-analyzer-rg --follow
-```
-
-### Costs
-
-Check in Azure Portal under **Cost Management → Cost analysis**.
-
-## **Step 8: Clean Up Resources**
-
-### Destroy everything
-
-**Mac/Linux**
+### Destroy when done
 
 ```bash
 terraform destroy \
@@ -172,38 +194,17 @@ terraform destroy \
   -var="semgrep_app_token=$SEMGREP_APP_TOKEN"
 ```
 
-**Windows PowerShell**
 
-```powershell
-terraform destroy -var ("openai_api_key=" + $Env:OPENAI_API_KEY) -var ("semgrep_app_token=" + $Env:SEMGREP_APP_TOKEN)
-```
 
-### Optional: delete resource group
+## **Summary**
 
-```bash
-az group delete --name cyber-analyzer-rg --yes
-```
+The **LLMOps Cybersecurity Analyzer** is a complete, production-quality example of modern LLMOps engineering:
 
-## **Understanding the Azure Architecture**
+* Secure AI agent workflows
+* Static analysis integration
+* Cloud-ready container packaging
+* Fully scripted IaC deployment
+* Repeatable, scalable, low-cost architecture
 
-### Cost Summary
-
-* ACR Basic: ~$5/mo
-* Container Apps: ~$0 when idle
-* Log Analytics: 5GB free
-* Total: < $5/month
-
-### Architecture
-
-```
-Internet → Azure Container App → Your Docker Image
-                 ↓
-          Log Analytics
-                 ↓
-       Azure Container Registry
-```
-
-### Scaling
-
-* Min replicas: 0
-* Max replicas: 1
+This project demonstrates a full lifecycle:
+**local development → AI security analysis → MCP + Semgrep integration → IaC cloud deployment**
