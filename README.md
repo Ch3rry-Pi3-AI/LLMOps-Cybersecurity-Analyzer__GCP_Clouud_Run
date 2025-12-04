@@ -45,10 +45,6 @@ This provides a full lifecycle:
 ```
 LLMOps-Cybersecurity-Analyzer/
 ├── assets/
-│   └── app/
-│       └── cyber_analyzer.gif
-│   └── azure/
-│       └── resources.png
 ├── backend/
 │   ├── context.py
 │   ├── mcp_servers.py
